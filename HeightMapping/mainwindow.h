@@ -1,5 +1,4 @@
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#pragma once
 
 #include <QOpenGLWindow>
 #include <QOpenGLFunctions>
@@ -7,11 +6,14 @@
 #include <QOpenGLVertexArrayObject>
 
 #include "transform3D.h"
+#include "camera3d.h"
 
 
 class QOpenGLShaderProgram;
 
-class MainWindow : public QOpenGLWindow, protected QOpenGLFunctions
+class MainWindow :
+        public QOpenGLWindow,
+        protected QOpenGLFunctions
 {
     Q_OBJECT
 
@@ -28,6 +30,11 @@ public:
 protected slots:
     void update();
 
+    void keyPressEvent(QKeyEvent *event) override;
+    void keyReleaseEvent(QKeyEvent *event) override;
+    void mousePressEvent(QMouseEvent *event) override;
+    void mouseReleaseEvent(QMouseEvent *event) override;
+
 private:
     // OpenGLState
     QOpenGLBuffer m_vertex;
@@ -36,11 +43,13 @@ private:
 
     // Informations shaders
     int u_modelToWorld;
-    int u_worldToView;
+    int u_worldToCamera;
+    int u_cameraToView;
+
     QMatrix4x4 m_projection;
     Transform3D m_transform;
+    Camera3D m_camera;
 
     // Outils privés
     void printContextInformations(); //!< print information about OpenGL context
 };
-#endif // MAINWINDOW_H
