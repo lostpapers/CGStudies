@@ -17,10 +17,12 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    transform3D.cpp
 
 HEADERS += \
     mainwindow.h \
+    transform3D.h \
     vertex.h
 
 # Default rules for deployment.
