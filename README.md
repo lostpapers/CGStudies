@@ -19,10 +19,13 @@ Je pense que cela sera un beau voyage.
 ### Court terme
 
  - Implémenter un rendu temps réel en OpenGL, avec déplacement de caméra et affichage d'objets utilisant des vertex shaders et des fragment shaders.
- - + Lumières
- - + Skybox
  - Utiliser quelques fragment shaders venant de ShaderToy
+ - Lumières
+ - Skybox
+ - Matériaux PBR
  - importer des objets au format Wavefront (.OBJ)
+ - Exporter au format .PBR et tester dans PBRt-v3
+ 
 
 ### Moyen terme
 ### Long terme
