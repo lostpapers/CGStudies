@@ -69,6 +69,7 @@ static const Vertex sg_vertices[] =
 MainWindow::MainWindow()
 {
     m_transform.translate(0.0f,0.0f,-5.0f);// L'objet est reculé de 5 unités
+    m_timer.start();
 }
 
 MainWindow::~MainWindow()
@@ -111,6 +112,7 @@ void MainWindow::initializeGL()
         u_modelToWorld = m_program->uniformLocation("modelToWorld");
         u_worldToCamera = m_program->uniformLocation("worldToCamera");
         u_cameraToView = m_program->uniformLocation("cameraToView");
+        u_time = m_program->uniformLocation("uTime");
 
 
         //--- Création du buffer (ne pas libérer tant que le VertexArrayObject n'est pas créé)
@@ -129,6 +131,7 @@ void MainWindow::initializeGL()
         m_program->enableAttributeArray(1);
         m_program->setAttributeBuffer(0, GL_FLOAT,Vertex::positionOffset(),Vertex::PositionTupleSize,Vertex::stride());
         m_program->setAttributeBuffer(1, GL_FLOAT,Vertex::colorOffset(),Vertex::ColorTupleSize,Vertex::stride());
+
         m_object.release(); // Libération (unbind all), dans le sens inverse de la création. 'release' (et non 'unbind') est l'opposé du 'bind'
         m_vertex.release();
         m_program->release();
@@ -150,6 +153,7 @@ void MainWindow::paintGL()
     m_program->bind();
     m_program->setUniformValue( u_worldToCamera, m_camera.toMatrix() );
     m_program->setUniformValue( u_cameraToView, m_projection );
+    m_program->setUniformValue( u_time, m_timer.elapsed()/1000.0f );
     {
         m_object.bind();
         m_program->setUniformValue( u_modelToWorld, m_transform.toMatrix() );

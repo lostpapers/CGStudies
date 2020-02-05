@@ -4,6 +4,7 @@
 #include <QOpenGLFunctions>
 #include <QOpenGLBuffer>
 #include <QOpenGLVertexArrayObject>
+#include <QTime>
 
 #include "transform3D.h"
 #include "camera3d.h"
@@ -41,10 +42,14 @@ private:
     QOpenGLVertexArrayObject m_object;
     QOpenGLShaderProgram *m_program;
 
+    QTime m_timer;
+
+
     // Informations shaders
     int u_modelToWorld;
     int u_worldToCamera;
     int u_cameraToView;
+    int u_time;
 
     QMatrix4x4 m_projection;
     Transform3D m_transform;
