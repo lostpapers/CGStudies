@@ -1,13 +1,15 @@
-# Journal de développement
-
-
-## Introduction
+# Présentation
 
 En quelques mots, mon but est d'explorer le plus loin possible tout ce qui touche aux nouvelles techniques de rendu en rapport avec le "Physically Based Rendering" (PBR)
 
 C'est un vaste sujets sur lequel j'ai réalistiquement 20 ans de retard.
 
-Tenir une sorte de journal me semble être le moyen le plus simple pour garder le cap dans mon projet et suivre mes progrès. 
+De fil en aiguille, j'ai (mal)heureusement redécouverts d'autres sujets connexes tels le Ray-marching, le Path-tracing, les shaders, l'IBL (Image based lighting).
+
+Cela fait énormément de sujets intéressants à étudier en programmation
+
+Tenir un journal me semble être le moyen le plus simple pour garder le cap dans mon projet et suivre mes progrès. 
+
 J'y garde donc mes notes, mes motivations, mes objectifs, mes tâches en cours et tout ce qui pourra me servir à progresser. 
 Avoir tout cela inscrit noir sur blanc me permet de m'y référer et de me rappeler régulièrement d'où je pars.
 
@@ -15,8 +17,8 @@ Je pense que cela sera un beau voyage.
 
 ***Note:** Pour des facilités d'usage, les notes les plus récentes sont en tête de journal (un peu comme un blog)*
 
-## Objectifs & Tâches
-### Court terme
+# Objectifs & Tâches
+## Court terme
 
  - Implémenter un rendu temps réel en OpenGL, avec déplacement de caméra et affichage d'objets utilisant des vertex shaders et des fragment shaders.
  - Utiliser quelques fragment shaders venant de ShaderToy
@@ -27,16 +29,23 @@ Je pense que cela sera un beau voyage.
  - Exporter au format .PBR et tester dans PBRt-v3
  
 
-### Moyen terme
-### Long terme
-## Février 2020: Premiers Tutoriels Qt-OpenGL et PBRt
+## Moyen terme
+## Long terme
 
+# Journal de développement
+## Février 2020
+### Premiers Tutoriels Qt-OpenGL
 Au sein de tous les sites parcourus, deux sites m'ont particulièrement parus pertinents pour commencer l'étude d'OpenGL, en s'appuyant sur Qt pour la gestion des entrées et des fenêtres:
 
  - [Le blog de Trent Reed](https://www.trentreed.net/topics/opengl/) et [ses sources](https://github.com/TReed0803/QtOpenGL/tree/tutorial-series)
  - [Le blog de Guillaume Belz](http://guillaume.belz.free.fr/doku.php?id=start#articles_opengl) et [ses sources](https://github.com/GuillaumeBelz/qt-opengl)
  
- En ce qui concerne PBRt, j'ai trouvé ce site qui montre étape par étape les résultats qu'à obtenu Jan Walter avec son[ implémentation de PBRt en RUST](https://www.janwalter.org/jekyll/rendering/pbrt/rust/2017/05/08/pbrt-rust-v0_1_0.html). C'est une bonnne idée que de progresser ainsi par étapes
+ C'est grâce aux tutos de Trent que j'ai pu commencer le développement.
+ 
+ ### PBRt
+ En ce qui concerne PBRt, j'ai trouvé ce site qui montre étape par étape les résultats qu'à obtenu Jan Walter avec son[Implémentation de PBRt en RUST](https://www.janwalter.org/jekyll/rendering/pbrt/rust/2017/05/08/pbrt-rust-v0_1_0.html). 
+ 
+ C'est une bonnne idée que de progresser ainsi par étapes et je suivrai certainement un processus similaire. Mais pour le moment je garde cela dans un coin pour référence.
 
 ## Janvier 2020: Motivations originelles
 
