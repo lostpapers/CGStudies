@@ -35,12 +35,13 @@ Je pense que cela sera un beau voyage.
 # Journal de développement
 ## Février 2020
 ### Premiers Tutoriels Qt-OpenGL
-Au sein de tous les sites parcourus, deux sites m'ont particulièrement parus pertinents pour commencer l'étude d'OpenGL, en s'appuyant sur Qt pour la gestion des entrées et des fenêtres:
+Au sein de tous les sites parcourus, trois sites m'ont particulièrement parus pertinents pour commencer l'étude d'OpenGL. Les deux premiers s'appuient sur Qt pour la gestion des entrées et des fenêtres:
 
  - [Le blog de Trent Reed](https://www.trentreed.net/topics/opengl/) et [ses sources](https://github.com/TReed0803/QtOpenGL/tree/tutorial-series)
  - [Le blog de Guillaume Belz](http://guillaume.belz.free.fr/doku.php?id=start#articles_opengl) et [ses sources](https://github.com/GuillaumeBelz/qt-opengl)
+ - [Le site opengl-tutorial.org](http://www.opengl-tutorial.org/) et [ses sources](https://github.com/opengl-tutorials/ogl)
  
- C'est grâce aux tutos de Trent que j'ai pu commencer le développement.
+ C'est grâce aux tutos de Trent que j'ai pu commencer le développement, mais les autres tutoriaux sont très intéressants. Il est probable que j'ai d'abord à faire ces 3 tutoriaux avant de progresser dans ma quête.
  
  ### PBRt
  En ce qui concerne PBRt, j'ai trouvé ce site qui montre étape par étape les résultats qu'à obtenu Jan Walter avec son[Implémentation de PBRt en RUST](https://www.janwalter.org/jekyll/rendering/pbrt/rust/2017/05/08/pbrt-rust-v0_1_0.html). 
