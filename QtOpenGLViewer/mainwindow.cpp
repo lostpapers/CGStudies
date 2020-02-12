@@ -100,7 +100,7 @@ void MainWindow::initializeGL()
         //--- Création du shader (ne pas libérer tant que le VertexArrayObject n'est pas créé)
 
         m_program = new QOpenGLShaderProgram();   // Seule partie créée par 'new' car passera de main en main. 'delete' de l'instance libérera le shader de la mémoire GPU
-        m_program->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/simple.vert"); // Le Vertex shader travaille avec notre type Vertex, le Fragment shader prendrea la sortie du Vertex shader, la sortie du Fragment se fait vers vers l'écran
+        m_program->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/simple.vert"); // Le Vertex shader travaille avec notre type Vertex, le Fragment shader prendra la sortie du Vertex shader, la sortie du Fragment se fait vers vers l'écran
         m_program->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/simple.frag");
         m_program->link();  // 'link()' rassemble les shaders. Le retour devrait être testé (sera fait plus tard)
         m_program->bind();  // 'bind()' pour que ce shader soit celui qui est actif
@@ -115,20 +115,22 @@ void MainWindow::initializeGL()
 
         //--- Création du buffer (ne pas libérer tant que le VertexArrayObject n'est pas créé)
 
-        m_vertex.create();   // Creation du bufferpour une allocation dynamique
-        m_vertex.bind();     // Marquer comme buffer courant
+        m_vertex.create();                                    // Creation du buffer pour une allocation dynamique
+        m_vertex.bind();                                      // Marquer comme buffer courant
         m_vertex.setUsagePattern(QOpenGLBuffer::StaticDraw);  // Les données ne changeront pas, donc rendu statique
-        m_vertex.allocate(sg_vertices,sizeof(sg_vertices)); // Allocation et initisalisation
+        m_vertex.allocate(sg_vertices,sizeof(sg_vertices));   // Allocation dans la mémoire graphique
 
 
         //--- Création du VertexArrayObject (VAO)
+        // Attribut 0 = position, Attribut 1 = couleur
+        // les  ...Offets, ...TupleSize et stride simplifient l'écriture)
 
         m_object.create();
         m_object.bind();
-        m_program->enableAttributeArray(0);  // Attribut 0 en position, Attribut 1 en couleur (les  ...Offets, ...TupleSize et stride simplifient l'écriture)
-        m_program->enableAttributeArray(1);
-        m_program->setAttributeBuffer(0, GL_FLOAT,Vertex::positionOffset(),Vertex::PositionTupleSize,Vertex::stride());
-        m_program->setAttributeBuffer(1, GL_FLOAT,Vertex::colorOffset(),Vertex::ColorTupleSize,Vertex::stride());
+        m_program->enableAttributeArray("position");  // On peut utiliser un index ou un nom spécifique pour l'attribut
+        m_program->enableAttributeArray("color");     // Ces attributs sont lié au dernier buffer alloué par allocate
+        m_program->setAttributeBuffer("position", GL_FLOAT,Vertex::positionOffset(),Vertex::PositionTupleSize,Vertex::stride());
+        m_program->setAttributeBuffer("color", GL_FLOAT,Vertex::colorOffset(),Vertex::ColorTupleSize,Vertex::stride());
         m_object.release(); // Libération (unbind all), dans le sens inverse de la création. 'release' (et non 'unbind') est l'opposé du 'bind'
         m_vertex.release();
         m_program->release();

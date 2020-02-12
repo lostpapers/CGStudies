@@ -1,12 +1,8 @@
 # Présentation
 
-En quelques mots, mon but est d'explorer le plus loin possible tout ce qui touche aux nouvelles techniques de rendu en rapport avec le "Physically Based Rendering" (PBR)
+En quelques mots, mon but est d'explorer le plus loin possible tout ce qui touche aux nouvelles techniques de rendu en rapport avec le "Physically Based Rendering" (PBR). C'est un vaste sujets sur lequel j'ai réalistiquement 20 ans de retard.
 
-C'est un vaste sujets sur lequel j'ai réalistiquement 20 ans de retard.
-
-De fil en aiguille, j'ai (mal)heureusement redécouverts d'autres sujets connexes tels le Ray-marching, le Path-tracing, les shaders, l'IBL (Image based lighting).
-
-Cela fait énormément de sujets intéressants à étudier en programmation
+De fil en aiguille, j'ai (mal)heureusement redécouverts d'autres sujets connexes tels le Ray-marching, le Path-tracing, les shaders, l'IBL (Image based lighting). Cela fait énormément de sujets intéressants à étudier en programmation
 
 Tenir un journal me semble être le moyen le plus simple pour garder le cap dans mon projet et suivre mes progrès. 
 
@@ -19,6 +15,13 @@ Je pense que cela sera un beau voyage.
 
 # Objectifs & Tâches
 ## Court terme
+ 
+ - Trouver une  référence de langage shader Qt5/OpenGL/GLSL
+ - Comment gérer les UV dans le fragment shader
+ - Comprendre les shaders?
+ 
+ 
+## Moyen terme
 
  - Implémenter un rendu temps réel en OpenGL, avec déplacement de caméra et affichage d'objets utilisant des vertex shaders et des fragment shaders.
  - Utiliser quelques fragment shaders venant de ShaderToy
@@ -28,13 +31,49 @@ Je pense que cela sera un beau voyage.
  - importer des objets au format Wavefront (.OBJ)
  - Exporter au format .PBR et tester dans PBRt-v3
  
-
-## Moyen terme
 ## Long terme
 
 # Journal de développement
-## Février 2020
-### Premiers Tutoriels Qt-OpenGL
+
+## 12/02/20 - Shadertoy
+
+
+Très bonne avancée sur le développement de shaders et surtout sur les techniques liées au ray_marching et au description de scènes en "Signed Distance Field" (SDF)
+
+Je suis plusieurs tutoriaus et réplique les techniques que j'ai pu analyser et comprendre.
+
+
+## 06/02/20 - Premiers obstacles
+
+J'ai compris que Qt5 avait amené pas mal de nouveauté dans  ce qu'on appelle "Modern OpenGL". Le résultat est que les tutoriaux de Developpez.com sont moins intéressants car ils s'appueint sur Qt4.
+
+A mon grand regret, le blog de Trent Reed n'apporte plus de conseils simples pour progresser, une fois mon cube coloré affiché. 
+
+il faudrait que je décortique ses code-sources pour progresser, ce qui risque d'être une solution fastideuse. Je me garde cette idée de côté au cas où je ne trouverai pas de tutoriaux aussi efficaces.
+
+Sinon en parallèle, je regarde ce qui existe comme projets sur Shadertoy qui pourraient me servir de référence pour mieux comprendre les shaders. Mais attention, il est aisé de se disperser vu le nombre de domaines qui sont intéressant (ray marching, SDF, PBR, ...)
+
+.../...
+
+Finalement, j'ai pris le parti de continuer l'exploration des nouvelles technos par l'intermédiaire de Shadertoy. En effet, cela founit un accès facile à un moteur de rendu très performant, qui peret notamment de déjà explorer très facilement plusieurs technos.
+
+Grace à Inigo Quilez et sa vidéo de deconstruction de Shader, j'ai déjà pu jouer à créer une visualisation par lancer de rayon, utilisant le principe de "Ray Marching" combiné à du "Sign Distance Field". Le rendu est pour l'instant à base de couleur diffuse, d'illumination directionnelle et du calcul d'ombres projetées.
+
+
+
+
+## 05/02/20 - Shadertoy
+
+J'ai voulu utiliser un shader simple de ShaderToy pour l'appliquer  en tant que fragment shader sur mon cube. 
+
+Cela m'a permis de comprendre qu'en fait ShaderToy fournissait ses propres Uniforms. Il était nécessaire de faire moi-même le passage d'un Uniform pour le temps écoulé car ce n'était pas disponible par défaut. De même il faudrait que je fasse cela pour la souris.
+
+J'ai vu aussi que ce n'était pas si simple d'avancer sans documentation sur le langage GLSL, donc il faut que je trouve un document de référence sur Qt5/OpenGL/GLSL
+
+Le résultat de ma migration du shader a mis en évidence que le rendu était bien en coordonnées écran. La couleur ne semble donc pas mappée sur l'objet. Il faudrait donc que je transfère des informations d'UV pour  que cela me donne un rendu en perspective
+
+## 04/02/20 - Premiers Tutoriels Qt-OpenGL
+
 Au sein de tous les sites parcourus, trois sites m'ont particulièrement parus pertinents pour commencer l'étude d'OpenGL. Les deux premiers s'appuient sur Qt pour la gestion des entrées et des fenêtres:
 
  - [Le blog de Trent Reed](https://www.trentreed.net/topics/opengl/) et [ses sources](https://github.com/TReed0803/QtOpenGL/tree/tutorial-series)

@@ -37,7 +37,7 @@ protected slots:
 
 private:
     // OpenGLState
-    QOpenGLBuffer m_vertex;
+    QOpenGLBuffer m_vertex;                // Vertex & color buffer. Type is QOpenGLBuffer::VertexBuffer by default
     QOpenGLVertexArrayObject m_object;
     QOpenGLShaderProgram *m_program;
 
