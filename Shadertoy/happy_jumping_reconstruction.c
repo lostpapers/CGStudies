@@ -51,14 +51,14 @@ float sdEllipsoid(in vec3 position, in vec3 radius)
 
 
 // SDF stick (Optimal algorithm by Inigo Quilez)
-float sdStick( in vec3 p, in vec3 a, in vec3 b, in float ra, in float rb )
+vec2 sdStick( in vec3 p, in vec3 a, in vec3 b, in float ra, in float rb )
 {
     vec3 ba = b-a;
     vec3 pa = p-a;
     
     float h = clamp( dot(pa,ba)/dot(ba,ba), 0.0, 1.0 );
 
-    return length( pa-h*ba )-mix( ra, rb, h);
+    return vec2(length( pa-h*ba )-mix( ra, rb, h), h);
 }
 
 // Returns a Vec2 where x=distance, y=material
@@ -69,17 +69,20 @@ float sdStick( in vec3 p, in vec3 a, in vec3 b, in float ra, in float rb )
 vec2 sdMonster(in vec3 position, in float time )
 {
     // extract fract part of time = [0.0, 1.0[
-    float animationTime = fract(time);
+    float time1 = fract(time);
+	float time4 = abs(fract(time*0.5)-0.5)/0.5;
+	
     
-    // Parabolic jump movement
-    float parabolic = 4.0 * animationTime * (1.0 - animationTime);
+    float parabolic = 4.0 * time1 * (1.0 - time1); // Parabolic jump movement
+	float parabolicDT = 4.0-8.0*time1;             // Derivative
 
-    vec3 center = vec3( 0.0,
-	                    parabolic + 0.1,
-		                time );
+    float x =-1.0+2.0*(time4);
+    vec3 center = vec3( 0.5*(x),                                  // Left to Right movement
+	                    pow(parabolic,2.0-parabolic) + 0.1,       // Smooth movement on ground rebound
+		                floor(time)+pow(time1,0.7)-1.0 ); // Slight front impulse on rebound
 
 	// Body
-    vec2 uu = normalize(vec2( 1.0, -4.0*(1.0-2.0*animationTime) ));
+    vec2 uu = normalize(vec2( 1.0, -parabolicDT ));
     vec2 vv = vec2(-uu.y, uu.x);
     
     // Expand & Squash effect
@@ -87,38 +90,69 @@ vec2 sdMonster(in vec3 position, in float time )
 	expandY += (1.0-smoothstep( 0.0, 0.4, parabolic))*(1.0-expandY);
 	float expandZ = 1.0 / expandY;
     
-    vec3 positionRelative = position - center;
-	vec3 positionBody = positionRelative;
+    vec3 posQ = position - center; // vec3 q = pos - cen;
 	
-    positionBody.yz = vec2( dot(uu,positionBody.yz), dot(vv,positionBody.yz) );
+    float ro = x*0.3;
+    float cc = cos(ro);
+    float ss = sin(ro);
+    posQ.xy = mat2(cc,-ss,ss,cc)*posQ.xy;
 	
-	vec2 result = vec2( sdEllipsoid( positionBody, vec3(0.25,0.25*expandY,0.25*expandZ) ), 2.0); // 2.0 = body color
+	vec3 posR = posQ;  // vec3 r = q;
+    posQ.yz = vec2( dot(uu,posQ.yz), dot(vv,posQ.yz) );
 	
+	vec2 result = vec2( sdEllipsoid( posQ, vec3(0.25,0.25*expandY,0.25*expandZ) ), 2.0); // 2.0 = body color
+	
+	
+
+    float t2 = fract(time+0.8);
+    float p2 = 0.5-0.5*cos(6.2831*t2);
 	
     // Head
-    vec3 symetric = vec3( abs(positionRelative.x),positionRelative.yz);
-    float dPart     = sdEllipsoid(positionRelative-vec3( 0, 0.20, 0.02), vec3( 0.08, 0.2, 0.15 ));
+	vec3 h = posR;  // head position
+    float hr = sin(0.791*time);
+    vec3 headSymetric = vec3( abs(h.x),h.yz); // hq
+    float dPart     = sdEllipsoid(h-vec3( 0.0, 0.20, 0.02 ), vec3( 0.08, 0.2, 0.15 ));
     result.x = smoothMin( result.x, dPart, 0.1 );
 	
-    dPart = sdEllipsoid(positionRelative-vec3( 0, 0.21,-0.1),  vec3( 0.20, 0.2, 0.2 ));
+    dPart = sdEllipsoid(h-vec3( 0.0, 0.21,-0.1 ),  vec3( 0.2, 0.2, 0.2 ));
     result.x = smoothMin( result.x, dPart, 0.1 );
 
+	// Wrinkles
+	{
+    float yy = posR.y-0.02-2.5*posR.x*posR.x;
+    result.x += 0.001*sin(yy*120.0)*(1.0-smoothstep(0.0,0.1,abs(yy)));
+    }
+    // Arms
+	{
+    vec3 sq = vec3( abs(posR.x), posR.yz );
+    vec2 dArms = sdStick( sq, vec3(0.18-0.06*hr*sign(posR.x),0.2,-0.05), vec3(0.3+0.1*p2,-0.2+0.3*p2,-0.15), 0.03, 0.06 );
+	result.x = smoothMin( result.x, dArms.x, 0.01+0.04*(1.0-dArms.y)*(1.0-dArms.y)*(1.0-dArms.y) );
+	}	
+    
+    // Legs
+	{
+    float t6 = cos(6.2831*(time*0.5+0.25));
+    float ccc = cos(1.57*t6*sign(posR.x));
+    float sss = sin(1.57*t6*sign(posR.x));
+	vec3 base = vec3(0.12,-0.07,-0.1); base.y -= 0.1*expandZ;
+    vec2 legs = sdStick( sq, base, base + vec3(0.2,-ccc,sss)*0.2, 0.04, 0.07 );
+	result.x = smoothMin( result.x, dLegs.x, 0.07 );
+	}	
     
     // Ears
-    dPart = sdStick( symetric, vec3(0.15,0.32,-0.05), vec3(0.2,0.2,-0.07), 0.01, 0.04 ) ;
-    
-	result.x = smoothMin( result.x, dPart, 0.01 );
+    vec2 dEars = sdStick( headSymetric, vec3(0.15,0.32,-0.05), vec3(0.2,0.2,-0.07), 0.01, 0.04 ) ;
+	result.x = smoothMin( result.x, dEars.x, 0.01 );
     
 	    
     // Mouth - Extend sides by deforming with a parabola y=f(x)
 	// smoothMax + négative dist to carve
-    dPart = sdEllipsoid(positionRelative-vec3(0.0,0.15+3.0*positionRelative.x*positionRelative.x,0.2), vec3(0.1,0.04,0.2));
+    dPart = sdEllipsoid(h-vec3(0.0,0.15+3.0*headSymetric.x*headSymetric.x,0.2), vec3(0.1,0.04,0.2));
    
     result.x = smoothMax( result.x, -dPart, 0.02 );
     
 
     // Eyebrows
-    vec3 eyeLids = symetric - vec3(0.12,0.34,0.15); 
+    vec3 eyeLids = headSymetric - vec3(0.12,0.34,0.15); 
     eyeLids.xy = mat2(3,4,-4,3)/5.0*eyeLids.xy;// Rotation, données de matrice avec Pythagore, pas besoin de sin/cos
     float dEyeLids  = sdEllipsoid(eyeLids, vec3(0.06,0.03,0.05));
     result.x = smoothMin( dEyeLids, result.x, 0.04);
@@ -127,10 +161,10 @@ vec2 sdMonster(in vec3 position, in float time )
     // Duplication par particularité des SDF, avec utilisation de valeur 
     // absolue pour faire croire  au point courant qu'il y a une deuxième sphère
     
-    float dEye      = sdSphere( symetric-vec3(0.08,0.27,0.06), 0.065);
+    float dEye      = sdSphere( headSymetric-vec3(0.08,0.27,0.06), 0.065);
     if( dEye<result.x ) { result = vec2(dEye, 3.0); }
     
-    float dIris = sdSphere( symetric-vec3(0.075,0.28,0.102), 0.0395);
+    float dIris = sdSphere( headSymetric-vec3(0.075,0.28,0.102), 0.0395);
     if( dIris<result.x ) { result = vec2(dIris, 4.0); }
 
     return result;
@@ -154,10 +188,28 @@ vec2 map( in vec3 position, float time )
     
     // test proximité Sol
     float dGround = position.y - (-0.1 + 0.05*(sin(2.0*position.x)+sin(2.0*position.z)));
-    if( dGround<result.x)
-    {
-        result = vec2( dGround, 1.0 );
-    }
+
+    vec3 posBubble = vec3( mod(abs(position.x),3.0), position.y, mod(position.z+1.5,3.0)-1.5 );
+    
+    // Unique id for bubble
+    vec2 idBubble = vec2( floor(position.x/3.0), floor((position.z+1.5)/3.0) );
+    float fidBubble = idBubble.x*11.1 + idBubble.y*31.7;
+    float fy = 0.5;//fract(fidBubble*1.312+time*0.1);
+	
+	// Ellipsoid with variable radius
+    float dBubble = sdEllipsoid(posBubble-vec3(2.0,0.0,0.0),(4.0*fy*(1.0-fy))*vec3(0.7,1.0+0.5*sin(fidBubble),0.7) );
+	
+    // Distance modification pattern identical to ground texture
+    // Problem: it creates differences in the distance field that can perturbs computation like shadows
+	dBubble -= 0.01*smoothstep(-0.3, 0.3, sin( 18.0*position.x)+sin(18.0*position.y)+sin(18.0*position.z));
+	
+    // Locally increased ray marching precision to prevent artifacts
+	dBubble *= 0.9;
+    //dBubble = min (dBubble, 2.0);
+    
+    dGround = smoothMin(dGround, dBubble,0.3);
+    if( dGround<result.x) result = vec2( dGround, 1.0 );
+
     
     return result;
 }
@@ -354,7 +406,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
         
 	vec3 col = RenderScene( ray_origin, ray_direct, time );
     
-    // gamma correction, à mettre dès le début pour travailler dans un rendu d'éclairage correct
+    // gamma correction, put as soon as project is started to work
+    // in a correct light rendering environment
     col = pow( col, vec3(0.4545) );
     
     fragColor = vec4(col,1.0);
