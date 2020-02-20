@@ -426,14 +426,17 @@ vec3 RenderScene( vec3 ray_origin, vec3 ray_direct, float time )
         float ao = calcOcclusion( position, normale, time);
         
         // Combinaison des couleurs
-		vec3 lighting = vec3( 7.0, 4.5, 3.0 )*sun_diffuse*sun_shadow
-		              + vec3( 0.5, 0.8, 0.9 )*sky_diffuse*ao
-					  + vec3( 0.7, 0.3, 0.2 )*bounce_diffuse*ao;
+		vec3 lighting = vec3(0.0);
+        lighting += vec3( 8.1, 6.0, 4.2 )*sun_diffuse*sun_shadow;
+        lighting += vec3( 0.5, 0.7, 1.0 )*sky_diffuse*ao;
+        lighting += vec3( 0.4, 1.0, 0.4 )*bounce_diffuse*ao;
 					  
         col = material*lighting;
         
         //col = vec3(ao*ao);
-        // Rebond de lumière 
+		
+        // fog
+        col = mix( col, vec3(0.5,0.7,0.9), 1.0-exp( -0.0001*impact.x*impact.x*impact.x ) );
     }
 	
 	return col;
