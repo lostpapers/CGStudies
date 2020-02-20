@@ -66,8 +66,15 @@ vec2 sdStick( in vec3 p, in vec3 a, in vec3 b, in float ra, in float rb )
 // List of materials
 //  - Body = 2.0
 //  - Eyes = 3.0
-vec2 sdMonster(in vec3 position, in float time )
+
+
+// Test si le point est à l'intérieur de la forme ou non
+// et à quelle distance se trouve t il. 0 indique que
+// l'on est sur la surface. On combine deux objets en retournant 
+// celui qui est le plus proche
+vec2 map( in vec3 position, float time )
 {
+    // Monster
     // extract fract part of time = [0.0, 1.0[
     float time1 = fract(time);
 	float time4 = abs(fract(time*0.5)-0.5)/0.5;
@@ -167,50 +174,73 @@ vec2 sdMonster(in vec3 position, in float time )
     float dIris = sdSphere( headSymetric-vec3(0.075,0.28,0.102), 0.0395);
     if( dIris<result.x ) { result = vec2(dIris, 4.0); }
 
-    return result;
-}
+       
+    // Ground
+    // ------
+    
+    float floorHeight = (-0.1 + 0.05*(sin(2.0*position.x)+sin(2.0*position.z)));
+    
+    float l = length((position-center).xz);
+    float groundTime = fract(time);
+                     
+    floorHeight -= 0.1*                        // amplitude
+                   sin(groundTime*10.0+l*3.0)* // sin wave
+                   exp(-1.0*l)*                // decay in distance
+                   exp(-1.0*groundTime)*       // decay in time
+                   smoothstep(0.0,0.1,groundTime);
+    
+    float dGround = position.y - floorHeight;
 
-// Test si le point est à l'intérieur de la forme ou non
-// et à quelle distance se trouve t il. 0 indique que
-// l'on est sur la surface. On combine deux objets en retournant 
-// celui qui est le plus proche
-vec2 map( in vec3 position, float time )
-{
-    // test proximité du Monstre
-    vec2 result = sdMonster( position, time );
     
-    // test proximité Sphere de rayon 0.25 au point d'origine
-    //float dSphere = sdSphere(position,0.25);
-    //if( dSphere<result.x)
-    //{
-    //    result = vec2(dSphere,1.0);
-    //}
     
-    // test proximité Sol
-    float dGround = position.y - (-0.1 + 0.05*(sin(2.0*position.x)+sin(2.0*position.z)));
-
-    vec3 posBubble = vec3( mod(abs(position.x),3.0), position.y, mod(position.z+1.5,3.0)-1.5 );
+    // Bubbles
+    // -------
     
-    // Unique id for bubble
+    vec3 posBubble = vec3(
+        mod(abs(position.x),3.0),
+        position.y,
+        mod(position.z+1.5,3.0)-1.5 );
+    
+    // Unique id for bubble : Add randomness to give a more natural feeling
     vec2 idBubble = vec2( floor(position.x/3.0), floor((position.z+1.5)/3.0) );
-    float fidBubble = idBubble.x*11.1 + idBubble.y*31.7;
-    float fy = 0.5;//fract(fidBubble*1.312+time*0.1);
+    float fidBubble = idBubble.x*11.1 + idBubble.y*31.7; // id for unique deformat/offset
+    float fy = fract(fidBubble*1.312+time*0.1);
 	
-	// Ellipsoid with variable radius
-    float dBubble = sdEllipsoid(posBubble-vec3(2.0,0.0,0.0),(4.0*fy*(1.0-fy))*vec3(0.7,1.0+0.5*sin(fidBubble),0.7) );
+    float siz = 4.0*fy*(1.0-fy); // Smoothly size to 0 to avoid pop disappearance
+    float y = 4.0*fy-1.0; // up movement
+    vec3 rad = vec3(0.7,1.0+0.5*sin(fidBubble),0.7); 
+    rad -= 0.1*(sin(position.x*3.0)+sin(position.y*4.0+sin(position.z*5.0))); //Deformation surface
+    
+	// Ellipsoid 
+    float dBubble = sdEllipsoid(posBubble-vec3(2.0,y,0.0),siz*rad );
 	
     // Distance modification pattern identical to ground texture
     // Problem: it creates differences in the distance field that can perturbs computation like shadows
 	dBubble -= 0.01*smoothstep(-0.3, 0.3, sin( 18.0*position.x)+sin(18.0*position.y)+sin(18.0*position.z));
 	
     // Locally increased ray marching precision to prevent artifacts
-	dBubble *= 0.9;
+	dBubble *= 0.5;
     //dBubble = min (dBubble, 2.0);
     
     dGround = smoothMin(dGround, dBubble,0.3);
     if( dGround<result.x) result = vec2( dGround, 1.0 );
 
+    // Candies
+    // -------
     
+    vec3 vp = vec3( mod(position.x+0.25,0.5)-0.25,
+                    position.y,
+                    mod(position.z+0.25,0.5)-0.25 );
+    vec2 id = floor((position.xz+0.25)*2.0 ) ;
+    
+    // disruption of grid
+    vec2 dis = cos( vec2( id.x*72.2+id.y*13.7,
+                          id.x*81.6+id.y*51.4));
+    
+	float dCandy = sdSphere(vp-vec3(dis.x * 0.1,floorHeight,dis.y*0.1), 0.05 );
+
+    if( dCandy<result.x) result = vec2( dCandy, 5.0 );
+
     return result;
 }
 
@@ -306,10 +336,19 @@ float calcOcclusion( in vec3 pos, in vec3 nor, float time )
 vec3 RenderScene( vec3 ray_origin, vec3 ray_direct, float time ) 
 {
     // La couleur par défaut est celle du ciel, qui devient plus claire vers le bas
-    vec3 col = vec3(0.4, 0.75, 1.0) - 0.7 * ray_direct.y;
+    vec3 col = vec3(0.5, 0.8, 0.9) - max( ray_direct.y,0.0)*0.5;
+    
+    // sky texture (like clouds)
+    vec2 uv = ray_direct.xz/ray_direct.y;
+    
+    float cloud_shape = sin(uv.x)+sin(uv.y) +        // Basic shape
+                        (sin(2.0*uv.x)+sin(2.0*uv.y)*0.5); // Add octave to shape (double frequency) at half amplitude
+    
+    col = mix( col, vec3(0.7,0.8,0.9),smoothstep(-0.1,0.1,-0.5+cloud_shape));
+        
     
     // Effet atmosphérique vers l'horizon
-    col = mix( col, vec3(0.7, 0.75, 0.8), exp(-10.0*ray_direct.y)); 
+    col = mix( col, vec3(0.7, 0.8, 0.9), exp(-10.0*ray_direct.y)); 
 
     // ray marching: on récupère distance d'impact et matériau
     vec2 impact = rayMarching( ray_origin, ray_direct, time );
@@ -339,10 +378,20 @@ vec3 RenderScene( vec3 ray_origin, vec3 ray_direct, float time )
             // Eye
         	material = vec3(0.4,0.4,0.4);
         }
-        else
+        else if( impact.y==4.0)
         {
             // Iris
         	material = vec3(0.02);
+        }
+        else
+        {
+            // Candy
+            material = vec3( 0.2, 0.03, 0.01 );
+            vec2 id = floor((position.xz+0.25)*2.0);
+            float fid = id.x*11.1 + id.y*31.7;
+            
+            // Shift RGB channels through Cosinus
+            material += 0.1*cos( fid*10.0 + vec3(0.0,0.2,0.5));
         }
             
         
@@ -356,12 +405,12 @@ vec3 RenderScene( vec3 ray_origin, vec3 ray_direct, float time )
         // le point est éclairé ou non en fonction des objets qui sont 
         // entre le point et le soleil
         // On décale le point de la surface pour éviter une intersection parasite
-        //float sun_shadow = castShadow( position+normale*0.0001, sun_direct );
-        //vec2 impact_sun = rayMarching( position+normale*0.01, sun_direct );
+        float sun_shadow = castShadow( position+normale*0.0001, sun_direct,time );
+        vec2 impact_sun = rayMarching( position+normale*0.01, sun_direct, time );
         
-        float sun_shadow = 1.0;
-        //if( impact_sun.y>0.0)
-        //    sun_shadow = 0.0;
+        //float sun_shadow = 1.0;
+        if( impact_sun.y>0.0)
+            sun_shadow = 0.0;
         
         
         // Calcul de l'éclairage venant du ciel, avec un décalage pour ce qui vient du sol
@@ -394,6 +443,11 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     // Camera: Y up, X right, Z toward us
     float animation = 10.0*iMouse.x/iResolution.x;
 	vec3 ray_origin = vec3(2.0*sin(animation),0.5,time + 2.0*cos(animation));
+    
+    // Camera shake (secondary movement induced by monster bounce)
+    float bounceTime = -1.0+2.0*abs(fract(time*0.5)-0.5)*2.0;
+    float bounce = smoothstep(0.8,1.0,abs(bounceTime));
+	ray_origin += 0.05*sin(time*15.0+vec3(0.0,2.0,4.0))*bounce;    
     
     vec3 target = vec3 (0,0.5,time);
     vec3 ww = normalize(target-ray_origin);
