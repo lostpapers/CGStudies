@@ -321,6 +321,9 @@ float calcOcclusion( in vec3 pos, in vec3 nor, float time )
 {
 	float occ = 0.0;
     float sca = 1.0;
+    
+    // 5 request around the point to SDF, darkkening the position in relation of 
+    // proximity of surfaces
     for( int i=0; i<5; i++ )
     {
         float h = 0.01 + 0.11*float(i)/4.0;
@@ -419,13 +422,17 @@ vec3 RenderScene( vec3 ray_origin, vec3 ray_direct, float time )
         // Calcul de reflet de lumière du sol
         float bounce_diffuse =  clamp(0.5+0.5*dot(normale,vec3(0.0,-1.0,0.0)), 0.0, 1.0);
         
+        // Compute ambiant occlusion
+        float ao = calcOcclusion( position, normale, time);
+        
         // Combinaison des couleurs
 		vec3 lighting = vec3( 7.0, 4.5, 3.0 )*sun_diffuse*sun_shadow
-		              + vec3( 0.5, 0.8, 0.9 )*sky_diffuse
-					  + vec3( 0.7, 0.3, 0.2 )*bounce_diffuse;
+		              + vec3( 0.5, 0.8, 0.9 )*sky_diffuse*ao
+					  + vec3( 0.7, 0.3, 0.2 )*bounce_diffuse*ao;
 					  
         col = material*lighting;
         
+        //col = vec3(ao*ao);
         // Rebond de lumière 
     }
 	
