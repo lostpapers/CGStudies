@@ -404,6 +404,9 @@ vec3 RenderScene( vec3 ray_origin, vec3 ray_direct, float time )
         vec3 sun_direct = normalize(vec3 (1.0,0.50, 0.20));
         float sun_diffuse = clamp(dot(normale,sun_direct), 0.0, 1.0);
         
+        // Old school specular, sneak Fresnel, 0.04 based reflection
+        //float sun_specular  =;
+        
         // On lance un nouveau rayon vers le soleil pour savoir si
         // le point est éclairé ou non en fonction des objets qui sont 
         // entre le point et le soleil
@@ -417,8 +420,13 @@ vec3 RenderScene( vec3 ray_origin, vec3 ray_direct, float time )
         
         
         // Calcul de l'éclairage venant du ciel, avec un décalage pour ce qui vient du sol
-        float sky_diffuse = clamp(0.5+0.5*dot(normale,vec3(0.0,1.0,0.0)), 0.0, 1.0);
+        float sky_diffuse = 2.5*clamp(0.5+0.5*dot(normale,vec3(0.0,1.0,0.0)), 0.0, 1.0);
          
+        // Calcul de spécularité pour lumière du ciel. On prend la refrection du vecteur
+        // de vue et on regarde s'il part vers le ciel. Smoothstep permet de régler la
+        // rugosité du matériau, en donnant un aspect plus brut ou plus doux
+        float sky_reflect = 0.07*smoothstep( 0.0, 0.2, reflect(ray_direct, normale).y);
+        
         // Calcul de reflet de lumière du sol
         float bounce_diffuse =  clamp(0.5+0.5*dot(normale,vec3(0.0,-1.0,0.0)), 0.0, 1.0);
         
@@ -427,11 +435,13 @@ vec3 RenderScene( vec3 ray_origin, vec3 ray_direct, float time )
         
         // Combinaison des couleurs
 		vec3 lighting = vec3(0.0);
-        lighting += vec3( 8.1, 6.0, 4.2 )*sun_diffuse*sun_shadow;
+        lighting += vec3( 10.0, 6.0, 3.0 )*sun_diffuse*sun_shadow;
         lighting += vec3( 0.5, 0.7, 1.0 )*sky_diffuse*ao;
-        lighting += vec3( 0.4, 1.0, 0.4 )*bounce_diffuse*ao;
+        lighting += vec3( 0.4, 1.3, 0.4 )*bounce_diffuse*ao;
 					  
         col = material*lighting;
+        
+        col += sky_reflect*vec3( 0.7, 0.9, 1.0 )*sky_diffuse*ao;
         
         //col = vec3(ao*ao);
 		
