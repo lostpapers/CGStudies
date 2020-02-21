@@ -116,8 +116,14 @@ vec4 map( in vec3 position, float time )
     float p2 = 0.5-0.5*cos(6.2831*t2);
 	
     // Head
+    // ----
 	vec3 h = posR;  // head position
-    float hr = sin(0.791*time);
+    
+    float headAnim = -1.0+2.0*smoothstep(-0.2,0.2,sin(time));
+    cc = cos(headAnim);
+    ss = sin(headAnim);
+    h.xz = mat2(cc,ss,-ss,cc) * h.xz; // Rotate head
+    
     vec3 headSymetric = vec3( abs(h.x),h.yz); // hq
     float dPart     = sdEllipsoid(h-vec3( 0.0, 0.20, 0.02 ), vec3( 0.08, 0.2, 0.15 ));
     result.x = smoothMin( result.x, dPart, 0.1 );
@@ -133,7 +139,12 @@ vec4 map( in vec3 position, float time )
     // Arms
 	
     vec3 sq = vec3( abs(posR.x), posR.yz );
-    vec2 dArms = sdStick( sq, vec3(0.18-0.06*hr*sign(posR.x),0.2,-0.05), vec3(0.3+0.1*p2,-0.2+0.3*p2,-0.15), 0.03, 0.06 );
+    
+    vec2 dArms = sdStick( 
+        sq, 
+        vec3(0.18-0.05*headAnim*sign(posR.x),0.2,-0.05), 
+        vec3(0.3+0.1*p2,-0.2+0.3*p2,-0.15), 0.03, 0.06 );
+    
 	result.x = smoothMin( result.x, dArms.x, 0.01+0.04*(1.0-dArms.y)*(1.0-dArms.y)*(1.0-dArms.y) );
 	
     
@@ -311,7 +322,7 @@ float castShadow( in vec3 ray_origin, vec3 ray_direct, float time )
         float impact = map(pos, time).x;
         
         // Ombre fonction de proximité rayon/objet et proximité origin/objet
-        res = min(res,32.0*max(impact,0.0)/distance);
+        res = min(res,24.0*max(impact,0.0)/distance);
         if( impact<0.0001)
             break;
         
@@ -375,7 +386,7 @@ vec3 RenderScene( vec3 ray_origin, vec3 ray_direct, float time )
         {
             // Ground
         	material = vec3(0.05,0.1,0.02);
-            float f = -1.0+2.0*smoothstep(-0.2, 0.2, sin( 18.0*position.x)+sin(18.0*position.y)+sin(18.0*position.z));
+            float f = -0.2+0.4*smoothstep(-0.2, 0.2, sin( 18.0*position.x)+sin(18.0*position.y)+sin(18.0*position.z));
             material += f*vec3( 0.06, 0.06, 0.02 );
         }
         else if( impact.y==2.0)
@@ -396,12 +407,12 @@ vec3 RenderScene( vec3 ray_origin, vec3 ray_direct, float time )
         else
         {
             // Candy
-            material = vec3( 0.2, 0.03, 0.01 );
+            material = vec3( 0.14,0.048,0.0 );
             vec2 id = floor((position.xz+0.25)*2.0);
             float fid = id.x*11.1 + id.y*31.7;
             
             // Shift RGB channels through Cosinus
-            material += 0.1*cos( fid*10.0 + vec3(0.0,0.2,0.5));
+            material += 0.036*cos( 10.0*fid + vec3(0.0,1.0,2.0));
         }
             
         
@@ -443,7 +454,8 @@ vec3 RenderScene( vec3 ray_origin, vec3 ray_direct, float time )
         
         // Diffuse lighting, applied on material color
 		vec3 lighting = vec3(0.0);
-        lighting += vec3( 9.00, 6.00, 3.00 )*sun_diffuse*sun_shadow;
+        lighting += vec3( 9.00, 6.00, 3.00 )*sun_diffuse*
+            vec3(sun_shadow,sun_shadow*sun_shadow,sun_shadow*sun_shadow); // trick to add red to transition (G and B are suared to decay faster)
         lighting += vec3( 1.10, 1.54, 2.20 )*sky_diffuse*ao;
         lighting += vec3( 0.40, 1.30, 0.40 )*bounce_diffuse*ao;
 		lighting += vec3( 8.00, 4.00, 3.20 )*fresnel*(0.1+0.9*sun_shadow)*(0.5+0.5*sun_diffuse*ao); // SSS: modulated by incoming lights
@@ -456,7 +468,12 @@ vec3 RenderScene( vec3 ray_origin, vec3 ray_direct, float time )
         //col = vec3(fresnel);
         //col = vec3(ao*ao);
 		//col = vec3(impact.z*impact.z);
+        //col = vec3(sun_shadow*sun_shadow);
+        //col = vec3(lighting*0.2);
         
+        // White balance / Color curve
+        col = pow(col, vec3(0.7,0.9,1.0));
+                            
         // fog
         col = mix( col, vec3(0.5,0.7,0.9), 1.0-exp( -0.0001*impact.x*impact.x*impact.x ) );
     }
@@ -495,6 +512,12 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     // gamma correction, put as soon as project is started to work
     // in a correct light rendering environment
     col = pow( col, vec3(0.4545) );
+    
+    // col is in HDR, we clap to LDR
+    col = clamp(col, 0.0,1.0);
+    
+    // increase contrast
+    col = col*0.5+0.5*col*col*(3.0-2.0*col);
     
     fragColor = vec4(col,1.0);
 }
