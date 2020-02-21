@@ -72,7 +72,8 @@ vec2 sdStick( in vec3 p, in vec3 a, in vec3 b, in float ra, in float rb )
 // et à quelle distance se trouve t il. 0 indique que
 // l'on est sur la surface. On combine deux objets en retournant 
 // celui qui est le plus proche
-vec2 map( in vec3 position, float time )
+// vec4 result = (distance, id, occlusion, ? )
+vec4 map( in vec3 position, float time )
 {
     // Monster
     // extract fract part of time = [0.0, 1.0[
@@ -107,7 +108,7 @@ vec2 map( in vec3 position, float time )
 	vec3 posR = posQ;  // vec3 r = q;
     posQ.yz = vec2( dot(uu,posQ.yz), dot(vv,posQ.yz) );
 	
-	vec2 result = vec2( sdEllipsoid( posQ, vec3(0.25,0.25*expandY,0.25*expandZ) ), 2.0); // 2.0 = body color
+	vec4 result = vec4( sdEllipsoid( posQ, vec3(0.25,0.25*expandY,0.25*expandZ) ), 2.0, 1.0, 0.0); // 2.0 = body color
 	
 	
 
@@ -154,9 +155,9 @@ vec2 map( in vec3 position, float time )
     // Mouth - Extend sides by deforming with a parabola y=f(x)
 	// smoothMax + négative dist to carve
     dPart = sdEllipsoid(h-vec3(0.0,0.15+3.0*headSymetric.x*headSymetric.x,0.2), vec3(0.1,0.04,0.2));
-   
+
     result.x = smoothMax( result.x, -dPart, 0.02 );
-    
+	result.z = 1.0-smoothstep(-0.01,0.001,-dPart);    
 
     // Eyebrows
     vec3 eyeLids = headSymetric - vec3(0.12,0.34,0.15); 
@@ -169,10 +170,14 @@ vec2 map( in vec3 position, float time )
     // absolue pour faire croire  au point courant qu'il y a une deuxième sphère
     
     float dEye      = sdSphere( headSymetric-vec3(0.08,0.27,0.06), 0.065);
-    if( dEye<result.x ) { result = vec2(dEye, 3.0); }
+    if( dEye<result.x )
+    {
+        result.xy = vec2(dEye, 3.0);
+        result.z = 1.0-smoothstep(0.0,0.017, dEye);
+    }
     
     float dIris = sdSphere( headSymetric-vec3(0.075,0.28,0.102), 0.0395);
-    if( dIris<result.x ) { result = vec2(dIris, 4.0); }
+    if( dIris<result.x ) { result.xyz = vec3(dIris, 4.0, 1.0); }
 
        
     // Ground
@@ -223,7 +228,7 @@ vec2 map( in vec3 position, float time )
     //dBubble = min (dBubble, 2.0);
     
     dGround = smoothMin(dGround, dBubble,0.3);
-    if( dGround<result.x) result = vec2( dGround, 1.0 );
+    if( dGround<result.x) result.xyz = vec3( dGround, 1.0, 1.0 );
 
     // Candies
     // -------
@@ -239,29 +244,32 @@ vec2 map( in vec3 position, float time )
     
 	float dCandy = sdSphere(vp-vec3(dis.x * 0.1,floorHeight,dis.y*0.1), 0.05 );
 
-    if( dCandy<result.x) result = vec2( dCandy, 5.0 );
+    // fake candy occlusion from ground, without casting ray
+    float candy_occlusion = clamp(40.0*(position.y-floorHeight),0.0,1.0);
+    
+    if( dCandy<result.x) result.xyz = vec3( dCandy, 5.0, candy_occlusion );
 
     return result;
 }
 
-vec2 rayMarching( in vec3 ray_origin, vec3 ray_direct, float time )
+vec4 rayMarching( in vec3 ray_origin, vec3 ray_direct, float time )
 {
 #define NEAR_CLIP 0.5
 #define FAR_CLIP 20.0
 #define MAX_STEPS 250
 
-	vec2 result = vec2(NEAR_CLIP, 0.0);
+	vec4 result = vec4(NEAR_CLIP, 0.0, -1.0, -1.0);
 	
     float distance = NEAR_CLIP;
     for( int i=0; i<MAX_STEPS && distance<FAR_CLIP; i++)
     {
         // Get nearest point from scene
-        vec2 impact = map(ray_origin + distance*ray_direct, time);
+        vec4 impact = map(ray_origin + distance*ray_direct, time);
         
         // Point is sufficiently near
         if( impact.x<0.01 )
         {
-        	result = vec2( distance, impact.y );
+        	result = vec4( distance, impact.yzw );
             break;
         }
         
@@ -293,8 +301,8 @@ float castShadow( in vec3 ray_origin, vec3 ray_direct, float time )
 {
     float res = 1.0;
     
-    float distance = 0.0;
-    for( int i=0; i<100; i++)
+    float distance = 0.01;
+    for( int i=0; i<60 && distance<20.0; i++)
     {
         // pos = position du point d'échantillonage le long du rayon
         vec3 pos = ray_origin + distance*ray_direct;
@@ -303,16 +311,14 @@ float castShadow( in vec3 ray_origin, vec3 ray_direct, float time )
         float impact = map(pos, time).x;
         
         // Ombre fonction de proximité rayon/objet et proximité origin/objet
-        res = min(res,10.0*impact/distance);
-        if( impact<0.0)
+        res = min(res,32.0*max(impact,0.0)/distance);
+        if( impact<0.0001)
             break;
         
-        distance += impact;
-        if( distance>20.0)
-            break;
+        distance += clamp(impact,0.001,0.1);
     }
     
-    return clamp( res,0.0,1.0);
+    return res;
 }
 
 // Thanks to Inigo Quilez
@@ -354,7 +360,7 @@ vec3 RenderScene( vec3 ray_origin, vec3 ray_direct, float time )
     col = mix( col, vec3(0.7, 0.8, 0.9), exp(-10.0*ray_direct.y)); 
 
     // ray marching: on récupère distance d'impact et matériau
-    vec2 impact = rayMarching( ray_origin, ray_direct, time );
+    vec4 impact = rayMarching( ray_origin, ray_direct, time );
     
     // On a trouvé quelque chose: materiau est défini
     if( impact.y>0.0 )
@@ -380,7 +386,7 @@ vec3 RenderScene( vec3 ray_origin, vec3 ray_direct, float time )
         else if( impact.y==3.0)
         {
             // Eye
-        	material = vec3(0.4,0.4,0.4);
+        	material = vec3(0.4);
         }
         else if( impact.y==4.0)
         {
@@ -413,20 +419,15 @@ vec3 RenderScene( vec3 ray_origin, vec3 ray_direct, float time )
         // entre le point et le soleil
         // On décale le point de la surface pour éviter une intersection parasite
         float sun_shadow = castShadow( position+normale*0.0001, sun_direct,time );
-        vec2 impact_sun = rayMarching( position+normale*0.01, sun_direct, time );
-        
-        //float sun_shadow = 1.0;
-        if( impact_sun.y>0.0)
-            sun_shadow = 0.0;
         
         
         // Calcul de l'éclairage venant du ciel, avec un décalage pour ce qui vient du sol
-        float sky_diffuse = 2.5*clamp(0.5+0.5*dot(normale,vec3(0.0,1.0,0.0)), 0.0, 1.0);
+        float sky_diffuse = clamp(0.5+0.5*dot(normale,vec3(0.0,1.0,0.0)), 0.0, 1.0);
          
         // Calcul de spécularité pour lumière du ciel. On prend la refrection du vecteur
         // de vue et on regarde s'il part vers le ciel. Smoothstep permet de régler la
         // rugosité du matériau, en donnant un aspect plus brut ou plus doux
-        float sky_reflect = 0.07*smoothstep( 0.0, 0.2, reflection.y);
+        float sky_reflect = smoothstep( 0.0, 0.2, reflection.y);
         
         // Calcul de reflet de lumière du sol
         float bounce_diffuse =  clamp(0.5+0.5*dot(normale,vec3(0.0,-1.0,0.0)), 0.0, 1.0);
@@ -437,23 +438,25 @@ vec3 RenderScene( vec3 ray_origin, vec3 ray_direct, float time )
         float fresnel = clamp(1.0+dot(ray_direct, normale), 0.0, 1.0 );
             
         // Compute ambiant occlusion
-        float ao = calcOcclusion( position, normale, time);
+        // Modulated by procedural occlusion coming from the model construction
+        float ao = calcOcclusion( position, normale, time) * impact.z;
         
         // Diffuse lighting, applied on material color
 		vec3 lighting = vec3(0.0);
-        lighting += vec3( 10.0, 6.0, 3.0 )*sun_diffuse*sun_shadow;
-        lighting += vec3( 0.5, 0.7, 1.0 )*sky_diffuse*ao;
-        lighting += vec3( 0.4, 1.3, 0.4 )*bounce_diffuse*ao;
-		lighting += vec3(1.0, 0.6, 0.5)*10.0 * fresnel*(0.5+0.5*sun_diffuse*ao); // SSS: modulatied by incoming lights
+        lighting += vec3( 9.00, 6.00, 3.00 )*sun_diffuse*sun_shadow;
+        lighting += vec3( 1.10, 1.54, 2.20 )*sky_diffuse*ao;
+        lighting += vec3( 0.40, 1.30, 0.40 )*bounce_diffuse*ao;
+		lighting += vec3( 8.00, 4.00, 3.20 )*fresnel*(0.1+0.9*sun_shadow)*(0.5+0.5*sun_diffuse*ao); // SSS: modulated by incoming lights
         
         col = material*lighting;
         
         // Specular lighting, does not take material color in account
-        col += sky_reflect*vec3( 0.7, 0.9, 1.0 )*sky_diffuse*ao;
+        col += sky_reflect*0.07*vec3( 0.7, 0.9, 1.0 )*sky_diffuse*ao;
         
         //col = vec3(fresnel);
         //col = vec3(ao*ao);
-		
+		//col = vec3(impact.z*impact.z);
+        
         // fog
         col = mix( col, vec3(0.5,0.7,0.9), 1.0-exp( -0.0001*impact.x*impact.x*impact.x ) );
     }
