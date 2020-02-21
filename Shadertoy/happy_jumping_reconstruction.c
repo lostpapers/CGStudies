@@ -361,6 +361,7 @@ vec3 RenderScene( vec3 ray_origin, vec3 ray_direct, float time )
     {
         vec3 position = ray_origin + impact.x*ray_direct;
         vec3 normale = calcNormal(position, time);
+        vec3 reflection = reflect(ray_direct, normale);
         
         vec3 material = vec3(0.18);
         
@@ -425,24 +426,32 @@ vec3 RenderScene( vec3 ray_origin, vec3 ray_direct, float time )
         // Calcul de spécularité pour lumière du ciel. On prend la refrection du vecteur
         // de vue et on regarde s'il part vers le ciel. Smoothstep permet de régler la
         // rugosité du matériau, en donnant un aspect plus brut ou plus doux
-        float sky_reflect = 0.07*smoothstep( 0.0, 0.2, reflect(ray_direct, normale).y);
+        float sky_reflect = 0.07*smoothstep( 0.0, 0.2, reflection.y);
         
         // Calcul de reflet de lumière du sol
         float bounce_diffuse =  clamp(0.5+0.5*dot(normale,vec3(0.0,-1.0,0.0)), 0.0, 1.0);
         
+        
+		// Fake subsurface scattering through Fresnel effect
+        // Compute if normale is facing toward us
+        float fresnel = clamp(1.0+dot(ray_direct, normale), 0.0, 1.0 );
+            
         // Compute ambiant occlusion
         float ao = calcOcclusion( position, normale, time);
         
-        // Combinaison des couleurs
+        // Diffuse lighting, applied on material color
 		vec3 lighting = vec3(0.0);
         lighting += vec3( 10.0, 6.0, 3.0 )*sun_diffuse*sun_shadow;
         lighting += vec3( 0.5, 0.7, 1.0 )*sky_diffuse*ao;
         lighting += vec3( 0.4, 1.3, 0.4 )*bounce_diffuse*ao;
-					  
+		lighting += vec3(1.0, 0.6, 0.5)*10.0 * fresnel*(0.5+0.5*sun_diffuse*ao); // SSS: modulatied by incoming lights
+        
         col = material*lighting;
         
+        // Specular lighting, does not take material color in account
         col += sky_reflect*vec3( 0.7, 0.9, 1.0 )*sky_diffuse*ao;
         
+        //col = vec3(fresnel);
         //col = vec3(ao*ao);
 		
         // fog
