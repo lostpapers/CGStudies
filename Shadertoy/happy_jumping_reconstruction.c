@@ -110,86 +110,87 @@ vec4 map( in vec3 position, float time )
 	
 	vec4 result = vec4( sdEllipsoid( posQ, vec3(0.25,0.25*expandY,0.25*expandZ) ), 2.0, 1.0, 0.0); // 2.0 = body color
 	
-	
-
-    float t2 = fract(time+0.8);
-    float p2 = 0.5-0.5*cos(6.2831*t2);
-	
-    // Head
-    // ----
-	vec3 h = posR;  // head position
-    
-    float headAnim = -1.0+2.0*smoothstep(-0.2,0.2,sin(time));
-    cc = cos(headAnim);
-    ss = sin(headAnim);
-    h.xz = mat2(cc,ss,-ss,cc) * h.xz; // Rotate head
-    
-    vec3 headSymetric = vec3( abs(h.x),h.yz); // hq
-    float dPart     = sdEllipsoid(h-vec3( 0.0, 0.20, 0.02 ), vec3( 0.08, 0.2, 0.15 ));
-    result.x = smoothMin( result.x, dPart, 0.1 );
-	
-    dPart = sdEllipsoid(h-vec3( 0.0, 0.21,-0.1 ),  vec3( 0.2, 0.2, 0.2 ));
-    result.x = smoothMin( result.x, dPart, 0.1 );
-
-	// Wrinkles
-	{
-    float yy = posR.y-0.02-2.5*posR.x*posR.x;
-    result.x += 0.001*sin(yy*120.0)*(1.0-smoothstep(0.0,0.1,abs(yy)));
-    }
-    // Arms
-	
-    vec3 sq = vec3( abs(posR.x), posR.yz );
-    
-    vec2 dArms = sdStick( 
-        sq, 
-        vec3(0.18-0.05*headAnim*sign(posR.x),0.2,-0.05), 
-        vec3(0.3+0.1*p2,-0.2+0.3*p2,-0.15), 0.03, 0.06 );
-    
-	result.x = smoothMin( result.x, dArms.x, 0.01+0.04*(1.0-dArms.y)*(1.0-dArms.y)*(1.0-dArms.y) );
-	
-    
-    // Legs
-	{
-    float t6 = cos(6.2831*(time*0.5+0.25));
-    float ccc = cos(1.57*t6*sign(posR.x));
-    float sss = sin(1.57*t6*sign(posR.x));
-	vec3 base = vec3(0.12,-0.07,-0.1); base.y -= 0.1*expandZ;
-    vec2 dLegs = sdStick( sq, base, base + vec3(0.2,-ccc,sss)*0.2, 0.04, 0.07 );
-	result.x = smoothMin( result.x, dLegs.x, 0.07 );
-	}	
-    
-    // Ears
-    vec2 dEars = sdStick( headSymetric, vec3(0.15,0.32,-0.05), vec3(0.2,0.2,-0.07), 0.01, 0.04 ) ;
-	result.x = smoothMin( result.x, dEars.x, 0.01 );
-    
-	    
-    // Mouth - Extend sides by deforming with a parabola y=f(x)
-	// smoothMax + négative dist to carve
-    dPart = sdEllipsoid(h-vec3(0.0,0.15+3.0*headSymetric.x*headSymetric.x,0.2), vec3(0.1,0.04,0.2));
-
-    result.x = smoothMax( result.x, -dPart, 0.02 );
-	result.z = 1.0-smoothstep(-0.01,0.001,-dPart);    
-
-    // Eyebrows
-    vec3 eyeLids = headSymetric - vec3(0.12,0.34,0.15); 
-    eyeLids.xy = mat2(3,4,-4,3)/5.0*eyeLids.xy;// Rotation, données de matrice avec Pythagore, pas besoin de sin/cos
-    float dEyeLids  = sdEllipsoid(eyeLids, vec3(0.06,0.03,0.05));
-    result.x = smoothMin( dEyeLids, result.x, 0.04);
-    
-    // Eyes
-    // Duplication par particularité des SDF, avec utilisation de valeur 
-    // absolue pour faire croire  au point courant qu'il y a une deuxième sphère
-    
-    float dEye      = sdSphere( headSymetric-vec3(0.08,0.27,0.06), 0.065);
-    if( dEye<result.x )
+    // Bounding volume around body of 2 units
+	if( result.x<1.0)
     {
-        result.xy = vec2(dEye, 3.0);
-        result.z = 1.0-smoothstep(0.0,0.017, dEye);
-    }
-    
-    float dIris = sdSphere( headSymetric-vec3(0.075,0.28,0.102), 0.0395);
-    if( dIris<result.x ) { result.xyz = vec3(dIris, 4.0, 1.0); }
+        float t2 = fract(time+0.8);
+        float p2 = 0.5-0.5*cos(6.2831*t2);
 
+        // Head
+        // ----
+        vec3 h = posR;  // head position
+
+        float headAnim = -1.0+2.0*smoothstep(-0.2,0.2,sin(time));
+        cc = cos(headAnim);
+        ss = sin(headAnim);
+        h.xz = mat2(cc,ss,-ss,cc) * h.xz; // Rotate head
+
+        vec3 headSymetric = vec3( abs(h.x),h.yz); // hq
+        float dPart     = sdEllipsoid(h-vec3( 0.0, 0.20, 0.02 ), vec3( 0.08, 0.2, 0.15 ));
+        result.x = smoothMin( result.x, dPart, 0.1 );
+
+        dPart = sdEllipsoid(h-vec3( 0.0, 0.21,-0.1 ),  vec3( 0.2, 0.2, 0.2 ));
+        result.x = smoothMin( result.x, dPart, 0.1 );
+
+        // Wrinkles
+        {
+        float yy = posR.y-0.02-2.5*posR.x*posR.x;
+        result.x += 0.001*sin(yy*120.0)*(1.0-smoothstep(0.0,0.1,abs(yy)));
+        }
+        // Arms
+
+        vec3 sq = vec3( abs(posR.x), posR.yz );
+
+        vec2 dArms = sdStick( 
+            sq, 
+            vec3(0.18-0.05*headAnim*sign(posR.x),0.2,-0.05), 
+            vec3(0.3+0.1*p2,-0.2+0.3*p2,-0.15), 0.03, 0.06 );
+
+        result.x = smoothMin( result.x, dArms.x, 0.01+0.04*(1.0-dArms.y)*(1.0-dArms.y)*(1.0-dArms.y) );
+
+
+        // Legs
+        {
+        float t6 = cos(6.2831*(time*0.5+0.25));
+        float ccc = cos(1.57*t6*sign(posR.x));
+        float sss = sin(1.57*t6*sign(posR.x));
+        vec3 base = vec3(0.12,-0.07,-0.1); base.y -= 0.1*expandZ;
+        vec2 dLegs = sdStick( sq, base, base + vec3(0.2,-ccc,sss)*0.2, 0.04, 0.07 );
+        result.x = smoothMin( result.x, dLegs.x, 0.07 );
+        }	
+
+        // Ears
+        vec2 dEars = sdStick( headSymetric, vec3(0.15,0.32,-0.05), vec3(0.2,0.2,-0.07), 0.01, 0.04 ) ;
+        result.x = smoothMin( result.x, dEars.x, 0.01 );
+
+
+        // Mouth - Extend sides by deforming with a parabola y=f(x)
+        // smoothMax + négative dist to carve
+        dPart = sdEllipsoid(h-vec3(0.0,0.15+3.0*headSymetric.x*headSymetric.x,0.2), vec3(0.1,0.04,0.2));
+
+        result.x = smoothMax( result.x, -dPart, 0.02 );
+        result.z = 1.0-smoothstep(-0.01,0.001,-dPart);    
+
+        // Eyebrows
+        vec3 eyeLids = headSymetric - vec3(0.12,0.34,0.15); 
+        eyeLids.xy = mat2(3,4,-4,3)/5.0*eyeLids.xy;// Rotation, données de matrice avec Pythagore, pas besoin de sin/cos
+        float dEyeLids  = sdEllipsoid(eyeLids, vec3(0.06,0.03,0.05));
+        result.x = smoothMin( dEyeLids, result.x, 0.04);
+
+        // Eyes
+        // Duplication par particularité des SDF, avec utilisation de valeur 
+        // absolue pour faire croire  au point courant qu'il y a une deuxième sphère
+
+        float dEye      = sdSphere( headSymetric-vec3(0.08,0.27,0.06), 0.065);
+        if( dEye<result.x )
+        {
+            result.xy = vec2(dEye, 3.0);
+            result.z = 1.0-smoothstep(0.0,0.017, dEye);
+        }
+
+        float dIris = sdSphere( headSymetric-vec3(0.075,0.28,0.102), 0.0395);
+        if( dIris<result.x ) { result.xyz = vec3(dIris, 4.0, 1.0); }
+    }
        
     // Ground
     // ------
@@ -205,7 +206,7 @@ vec4 map( in vec3 position, float time )
                    exp(-1.0*groundTime)*       // decay in time
                    smoothstep(0.0,0.1,groundTime);
     
-    float dGround = position.y - floorHeight;
+    float dGround = 0.6*(position.y - floorHeight);
 
     
     
@@ -232,10 +233,10 @@ vec4 map( in vec3 position, float time )
 	
     // Distance modification pattern identical to ground texture
     // Problem: it creates differences in the distance field that can perturbs computation like shadows
-	dBubble -= 0.01*smoothstep(-0.3, 0.3, sin( 18.0*position.x)+sin(18.0*position.y)+sin(18.0*position.z));
+	dBubble -= 0.005*smoothstep(-0.3, 0.3, sin( 18.0*position.x)+sin(18.0*position.y)+sin(18.0*position.z));
 	
     // Locally increased ray marching precision to prevent artifacts
-	dBubble *= 0.5;
+	dBubble *= 0.4;
     //dBubble = min (dBubble, 2.0);
     
     dGround = smoothMin(dGround, dBubble,0.3);
@@ -274,8 +275,14 @@ vec4 rayMarching( in vec3 ray_origin, vec3 ray_direct, float time )
     float distance = NEAR_CLIP;
     for( int i=0; i<MAX_STEPS && distance<FAR_CLIP; i++)
     {
+        vec3 pos = ray_origin + distance*ray_direct;
+            
+            
+        if(pos.y>3.5)
+            break;
+            
         // Get nearest point from scene
-        vec4 impact = map(ray_origin + distance*ray_direct, time);
+        vec4 impact = map(pos, time);
         
         // Point is sufficiently near
         if( impact.x<0.01 )
@@ -283,6 +290,7 @@ vec4 rayMarching( in vec3 ray_origin, vec3 ray_direct, float time )
         	result = vec4( distance, impact.yzw );
             break;
         }
+        
         
         distance += impact.x;
     }
@@ -323,7 +331,7 @@ float castShadow( in vec3 ray_origin, vec3 ray_direct, float time )
         
         // Ombre fonction de proximité rayon/objet et proximité origin/objet
         res = min(res,24.0*max(impact,0.0)/distance);
-        if( impact<0.0001)
+        if( impact<0.0001 )
             break;
         
         distance += clamp(impact,0.001,0.1);
