@@ -481,43 +481,63 @@ vec3 RenderScene( vec3 ray_origin, vec3 ray_direct, float time )
 	return col;
 }
 
+#define AA 2
+#define BLUR_FRAMERATE 24.0
+
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
-    // Screen normalization [-1.0, 1.0]
-    vec2 p = (2.0*fragCoord-iResolution.xy)/iResolution.y;
+    fragColor = vec4(0.0,0.0,0.0,1.0);
+    
+    // Super sampling
+    for( int m=0; m<AA; m++ )
+    {
+        for( int n=0; n<AA; n++ )
+        {
+            vec2 coord_offset = -1.0+(0.5+vec2( float(m), float(n) ))/float(AA);
+                
+            // Screen normalization [-1.0, 1.0]
+            vec2 p = (2.0*(fragCoord+coord_offset)-iResolution.xy)/iResolution.y;
 
-	// Copy iTime, for fine control
-    float time = iTime;
+            // Time control, for motion blur with dithering
+            float motion_blur = float(m*AA+n)/float(AA*AA);
+            float motion_dither = texelFetch(iChannel0, ivec2(fragCoord)&255, 0).x ;
+            motion_blur += (motion_dither-0.5)/float(AA*AA);
+            float time = iTime - motion_blur*0.5/BLUR_FRAMERATE;
 
-    // Camera: Y up, X right, Z toward us
-    float animation = 10.0*iMouse.x/iResolution.x;
-	vec3 ray_origin = vec3(2.0*sin(animation),0.5,time + 2.0*cos(animation));
+            // Camera: Y up, X right, Z toward us
+            float animation = 10.0*iMouse.x/iResolution.x;
+            vec3 ray_origin = vec3(2.0*sin(animation),0.5,time + 2.0*cos(animation));
+
+            // Camera shake (secondary movement induced by monster bounce)
+            float bounceTime = -1.0+2.0*abs(fract(time*0.5)-0.5)*2.0;
+            float bounce = smoothstep(0.8,1.0,abs(bounceTime));
+            ray_origin += 0.05*sin(time*15.0+vec3(0.0,2.0,4.0))*bounce;    
+
+            vec3 target = vec3 (0,0.5,time);
+            vec3 ww = normalize(target-ray_origin);
+            vec3 uu = normalize( cross(ww, vec3(0,1,0)));
+            vec3 vv = normalize( cross(uu,ww) );
+
+            // direction du rayon dans le monde, depuis le repère de la caméra
+            // le facteur associé à ww permet de gérer la focale
+            vec3 ray_direct = normalize( p.x*uu + p.y*vv + 1.8*ww );
+
+            vec3 col = RenderScene( ray_origin, ray_direct, time );
+
+            // gamma correction, put as soon as project is started to work
+            // in a correct light rendering environment
+            col = pow( col, vec3(0.4545) );
+
+            // col is in HDR, we clap to LDR
+            col = clamp(col, 0.0,1.0);
+
+            // increase contrast
+            col = col*0.5+0.5*col*col*(3.0-2.0*col);
+            fragColor.xyz += col;
+            
+            //fragColor.xyz = vec3(motion_dither);
+        }
+    }
     
-    // Camera shake (secondary movement induced by monster bounce)
-    float bounceTime = -1.0+2.0*abs(fract(time*0.5)-0.5)*2.0;
-    float bounce = smoothstep(0.8,1.0,abs(bounceTime));
-	ray_origin += 0.05*sin(time*15.0+vec3(0.0,2.0,4.0))*bounce;    
-    
-    vec3 target = vec3 (0,0.5,time);
-    vec3 ww = normalize(target-ray_origin);
-    vec3 uu = normalize( cross(ww, vec3(0,1,0)));
-    vec3 vv = normalize( cross(uu,ww) );
-    
-    // direction du rayon dans le monde, depuis le repère de la caméra
-    // le facteur associé à ww permet de gérer la focale
-    vec3 ray_direct = normalize( p.x*uu + p.y*vv + 1.8*ww );
-        
-	vec3 col = RenderScene( ray_origin, ray_direct, time );
-    
-    // gamma correction, put as soon as project is started to work
-    // in a correct light rendering environment
-    col = pow( col, vec3(0.4545) );
-    
-    // col is in HDR, we clap to LDR
-    col = clamp(col, 0.0,1.0);
-    
-    // increase contrast
-    col = col*0.5+0.5*col*col*(3.0-2.0*col);
-    
-    fragColor = vec4(col,1.0);
+    fragColor.xyz /= float(AA*AA);
 }
