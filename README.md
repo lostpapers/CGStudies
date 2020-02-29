@@ -35,12 +35,16 @@ Je pense que cela sera un beau voyage.
 
 # Journal de développement
 
+## 24/02/20 - Shadertoy
+
+J'ai suivi les 2 tutoriaux de Inigo Quilez sur ses engrenages et sur la créatures bondisantes de bout en bout. CEla a permi de comprendre en profondeur certaines implications liées à la technique du SDF.
+
 ## 12/02/20 - Shadertoy
 
 
 Très bonne avancée sur le développement de shaders et surtout sur les techniques liées au ray_marching et au description de scènes en "Signed Distance Field" (SDF)
 
-Je suis plusieurs tutoriaus et réplique les techniques que j'ai pu analyser et comprendre.
+Je suis plusieurs tutoriaux et réplique les techniques que j'ai pu analyser et comprendre.
 
 
 ## 06/02/20 - Premiers obstacles
