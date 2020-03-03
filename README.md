@@ -35,6 +35,15 @@ Je pense que cela sera un beau voyage.
 
 # Journal de développement
 
+## 03/03/20 - Shadertoy
+
+Je voudrais mettre en place réflections et réfractions dans un Ray Marcher, de manière généraliste, afin de ne pas à avoir à employer des techniques foncitons de la scène.
+
+Ces exemples correspondent à ce que je veux faire et il est donc nécessaire que je les étudie pour saisir les techniques employées:
+
+[Glass and metal hearts](https://www.shadertoy.com/view/MdfcRs) - Utilise des définitions de matériaux et fait bien progresser des rayons au sein du SDF  
+[Almost Physically based glass](https://www.shadertoy.com/view/MsXyz8) - Implémentation plus obscure à base de macros, mais rendu bluffant
+
 ## 24/02/20 - Shadertoy
 
 J'ai suivi les 2 tutoriaux de Inigo Quilez sur ses engrenages et sur la créatures bondisantes de bout en bout. CEla a permi de comprendre en profondeur certaines implications liées à la technique du SDF.
