@@ -35,6 +35,32 @@ Je pense que cela sera un beau voyage.
 
 # Journal de développement
 
+## 04/03/20 - Vulkan? Raytracing?
+
+Comme prévu, il est tentant de se disperser et il est donc important que je garde mes objectifs en vue.
+
+
+Petit revirement de stratégie qui semble bien plus alignée avec mes envies: Vulkan, au lieu d'OpenGL?
+
+Vulkan a une approche plus orientée Computer Graphcs, plus proche du GPU qu'OpenGL. De plus, c'est une technologie moderne qui a de bons échos et qui est reconnue.
+
+A priori, peu de connaissance OpenGL sont nécessaires (voir pas du tout) et divers tutoriaux sont disponibles:
+
+https://vulkan-tutorial.com/
+
+
+Quant au Ray Tracing, c'est toujours un objectif a long terme de travailler sur une implémentation personnelle. Je n'ai pas encore de recul suffisant sur la techno qui supporterait ce projet, mais les approches GPU-oriented sont très tentantes. Ce que j'ai vu aussi sur Shadertoy m'a déjà donné un aperçu des problématique. 
+
+Je pense toutefois que s'intéresser aux concepts fondamentaux est nécessaire, et suivre un guide comme "RT in one week end" serait énorme.
+
+https://github.com/RayTracing/raytracing.github.io  
+https://raytracing.github.io/books/RayTracingInOneWeekend.html  
+https://raytracing.github.io/books/RayTracingTheNextWeek.html  
+https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html
+
+
+
+
 ## 03/03/20 - Shadertoy
 
 Je voudrais mettre en place réflections et réfractions dans un Ray Marcher, de manière généraliste, afin de ne pas à avoir à employer des techniques foncitons de la scène.
