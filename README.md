@@ -16,9 +16,9 @@ Je pense que cela sera un beau voyage.
 # Objectifs & Tâches
 ## Court terme
  
- - Trouver une  référence de langage shader Qt5/OpenGL/GLSL
- - Comment gérer les UV dans le fragment shader
- - Comprendre les shaders?
+ - Gestion de la refraction/reflection dans un "ray marcher SDF"
+ - Matériaux PBR
+ - Image Based Lighting
  
  
 ## Moyen terme
@@ -59,8 +59,6 @@ https://raytracing.github.io/books/RayTracingTheNextWeek.html
 https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html
 
 
-
-
 ## 03/03/20 - Shadertoy
 
 Je voudrais mettre en place réflections et réfractions dans un Ray Marcher, de manière généraliste, afin de ne pas à avoir à employer des techniques foncitons de la scène.
@@ -69,6 +67,11 @@ Ces exemples correspondent à ce que je veux faire et il est donc nécessaire qu
 
 [Glass and metal hearts](https://www.shadertoy.com/view/MdfcRs) - Utilise des définitions de matériaux et fait bien progresser des rayons au sein du SDF  
 [Almost Physically based glass](https://www.shadertoy.com/view/MsXyz8) - Implémentation plus obscure à base de macros, mais rendu bluffant
+[Physically-based SDF](https://www.shadertoy.com/view/XlKSDR) - Scène simple, mais algos de référence
+
+[Old Watch (IBL)](https://www.shadertoy.com/view/lscBW4) et [Old Watch (RT)](https://www.shadertoy.com/view/MlyyzW) - Même scène rendue avec 2 moteurs différents
+
+[Ice Primitives](https://www.shadertoy.com/view/MscXzn) - Bonne structuration du code et 
 
 ## 24/02/20 - Shadertoy
 
@@ -169,14 +172,13 @@ Voici donc les premières étapes que je me suis définies dans cette aventure:
  
  J'ai notamment en tête deux images trouvées sur le net, que j'aimerai générer par moi même grâce à ces outils:
  
- *Ray tracing: Rendu d'une boîte de Cornell*
+
  
 [Plusieurs exemples de rendus sur le site de Stanford](https://graphics.stanford.edu/~henrik/images/cbox.html)
  
-<img src="https://graphics.stanford.edu/~henrik/images/imgs/cbox_pathtracing.jpg" width="300">
- 
- *Temps-réel: Rendu multi matériaux par Unreal"
+<img src="https://graphics.stanford.edu/~henrik/images/imgs/cbox_pathtracing.jpg" width="300">  
 
-[Doc Unreal: Physically Bases Materials](https://docs.unrealengine.com/en-US/Engine/Rendering/Materials/PhysicallyBased/index.html)
+
+[Doc Unreal: Physically Bases Materials](https://docs.unrealengine.com/en-US/Engine/Rendering/Materials/PhysicallyBased/index.html)  
 
 <img src="https://docs.unrealengine.com/Images/Engine/Rendering/Materials/PhysicallyBased/measured_materials.png" width="300">
